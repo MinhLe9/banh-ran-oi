@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bánh Rán Nhớ Bánh Cam</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #ffeef2;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Khung game Bắn Cung */
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .hint-text {
+            position: absolute;
+            top: 10%;
+            font-size: 22px;
+            color: #d63384;
+            font-weight: bold;
+            text-align: center;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        #canvas {
+            background: transparent;
+            cursor: crosshair;
+        }
+
+        /* Khung Phong Bì Thư */
+        #envelope-container {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+
+        #envelope-container.show {
+            display: block;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .envelope {
+            width: 320px;
+            height: 220px;
+            background: #ff758c;
+            position: relative;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+
+        .envelope::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-left: 160px solid #ff8fa3;
+            border-right: 160px solid #ff8fa3;
+            border-bottom: 110px solid #ff8fa3;
+            border-top: 110px solid transparent;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            z-index: 2;
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-left: 160px solid transparent;
+            border-right: 160px solid transparent;
+            border-top: 120px solid #ff4d6d;
+            transform-origin: top;
+            transition: transform 0.4s ease;
+            z-index: 3;
+        }
+
+        .envelope.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .heart-seal {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 35px;
+            color: #ffffff;
+            z-index: 4;
+            transition: opacity 0.3s;
+        }
+
+        .envelope.open .heart-seal {
+            opacity: 0;
+        }
+
+        /* Tờ Thư Hỏi Cực Dễ Thương */
+        .card {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            height: 200px;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.5s ease;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+        }
+
+        .envelope.open .card {
+            transform: translateY(-130px);
+            height: 280px;
+            z-index: 5;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #d63384;
+            font-size: 22px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn-yes {
+            background-color: #ff4d6d;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 77, 109, 0.4);
+        }
+
+        .btn-yes:hover {
+            transform: scale(1.1);
+            background-color: #ff2a54;
+        }
+
+        .btn-no {
+            background-color: #6c757d;
+            color: white;
+            position: relative;
+        }
+
+        /* Màn hình thông báo khi bấm "Có" */
+        #success-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 238, 242, 0.95);
+            z-index: 200;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #success-screen h1 {
+            font-size: 36px;
+            color: #ff4d6d;
+            margin-bottom: 15px;
+        }
+
+        #success-screen p {
+            font-size: 20px;
+            color: #555;
+        }
+
+        .floating-heart {
+            position: absolute;
+            font-size: 24px;
+            animation: floatUp 3s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-100vh) scale(1.2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="hint-text" id="hint">Kéo cung và bắn trúng trái tim nhé! 🏹❤️</div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Phong Bì Thư -->
+    <div id="envelope-container">
+        <div class="envelope" id="envelope" onclick="openEnvelope()">
+            <div class="envelope-flap"></div>
+            <div class="heart-seal">❤️</div>
+            <div class="card" onclick="event.stopPropagation()">
+                <h2>Bánh rán nhớ bánh cam không ♡ ?</h2>
+                <div class="btn-group">
+                    <button class="btn btn-yes" onclick="sayYes()">Có ♡</button>
+                    <button class="btn btn-no" id="btn-no" onmouseover="moveNoButton()" onclick="moveNoButton()">Không</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Màn Hình Kết Quả -->
+    <div id="success-screen">
+        <h1>Bánh Cam cũng nhớ Bánh Rán lắm! 🥰❤️</h1>
+        <p>Bánh Rán biết điều đó mà ~ ✨</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = Math.min(window.innerWidth, 800);
+        canvas.height = 500;
+
+        let isDragging = false;
+        let bow = { x: 100, y: canvas.height / 2 };
+        let arrow = { x: 100, y: canvas.height / 2, vx: 0, vy: 0, isShot: false };
+        let target = { x: canvas.width - 120, y: canvas.height / 2, radius: 40, dy: 2 };
+        let dragStart = { x: 0, y: 0 };
+        let currentDrag = { x: 0, y: 0 };
+
+        function drawTarget() {
+            // Tấm bia Trái tim
+            ctx.save();
+            ctx.translate(target.x, target.y);
+            ctx.beginPath();
+            ctx.fillStyle = '#ff4d6d';
+            let topCurveHeight = target.radius * 0.7;
+            ctx.moveTo(0, topCurveHeight);
+            ctx.bezierCurveTo(0, 0, -target.radius, 0, -target.radius, topCurveHeight);
+            ctx.bezierCurveTo(-target.radius, (target.radius + topCurveHeight) / 2, 0, target.radius * 1.3, 0, target.radius * 1.5);
+            ctx.bezierCurveTo(0, target.radius * 1.3, target.radius, (target.radius + topCurveHeight) / 2, target.radius, topCurveHeight);
+            ctx.bezierCurveTo(target.radius, 0, 0, 0, 0, topCurveHeight);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // Di chuyển trái tim lên xuống nhẹ nhàng
+            target.y += target.dy;
+            if (target.y - 40 < 50 || target.y + 40 > canvas.height - 50) {
+                target.dy *= -1;
+            }
+        }
+
+        function drawBow() {
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(bow.x, bow.y, 60, -Math.PI / 2, Math.PI / 2);
+            ctx.stroke();
+
+            // Dây cung
+            ctx.strokeStyle = '#aaa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(bow.x, bow.y - 60);
+            if (isDragging) {
+                ctx.lineTo(currentDrag.x, currentDrag.y);
+            } else {
+                ctx.lineTo(bow.x, bow.y);
+            }
+            ctx.lineTo(bow.x, bow.y + 60);
+            ctx.stroke();
+        }
+
+        function drawArrow() {
+            if (!arrow.isShot && !isDragging) {
+                arrow.x = bow.x;
+                arrow.y = bow.y;
+            }
+
+            ctx.save();
+            let angle = 0;
+            if (isDragging) {
+                angle = Math.atan2(bow.y - currentDrag.y, bow.x - currentDrag.x);
+            } else if (arrow.isShot) {
+                angle = Math.atan2(arrow.vy, arrow.vx);
+            }
+
+            ctx.translate(arrow.x, arrow.y);
+            ctx.rotate(angle);
+
+            // Thân mũi tên
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-40, 0);
+            ctx.lineTo(10, 0);
+            ctx.stroke();
+
+            // Đầu mũi tên (Hình trái tim nhỏ)
+            ctx.fillStyle = '#ff4d6d';
+            ctx.beginPath();
+            ctx.arc(10, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function updateArrow() {
+            if (arrow.isShot) {
+                arrow.x += arrow.vx;
+                arrow.y += arrow.vy;
+
+                // Kiểm tra va chạm với Trái Tim
+                let dist = Math.hypot(arrow.x - target.x, arrow.y - target.y);
+                if (dist < target.radius + 10) {
+                    arrow.isShot = false;
+                    setTimeout(showEnvelope, 300);
+                }
+
+                // Nếu bắn trượt ra ngoài
+                if (arrow.x > canvas.width || arrow.y < 0 || arrow.y > canvas.height) {
+                    arrow.isShot = false;
+                    arrow.x = bow.x;
+                    arrow.y = bow.y;
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTarget();
+            drawBow();
+            drawArrow();
+            updateArrow();
+            requestAnimationFrame(animate);
+        }
+
+        // Sự kiện Kéo Bắn Cung
+        canvas.addEventListener('mousedown', (e) => {
+            let rect = canvas.getBoundingClientRect();
+            let mx = e.clientX - rect.left;
+            let my = e.clientY - rect.top;
+
+            if (Math.hypot(mx - bow.x, my - bow.y) < 60 && !arrow.isShot) {
+                isDragging = true;
+                dragStart = { x: mx, y: my };
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                let rect = canvas.getBoundingClientRect();
+                currentDrag.x = e.clientX - rect.left;
+                currentDrag.y = e.clientY - rect.top;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                arrow.isShot = true;
+                let p1 = { x: bow.x, y: bow.y };
+                let p2 = currentDrag;
+                arrow.vx = (p1.x - p2.x) * 0.2;
+                arrow.vy = (p1.y - p2.y) * 0.2;
+                arrow.x = bow.x;
+                arrow.y = bow.y;
+            }
+        });
+
+        animate();
+
+        // Hiển thị Lá Thư
+        function showEnvelope() {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('envelope-container').classList.add('show');
+        }
+
+        // Mở Lá Thư
+        function openEnvelope() {
+            document.getElementById('envelope').classList.add('open');
+        }
+
+        // Nút Không nhảy lung tung
+        function moveNoButton() {
+            const btnNo = document.getElementById('btn-no');
+            const x = Math.random() * 200 - 100;
+            const y = Math.random() * 100 - 50;
+            btnNo.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        // Chọn "Có"
+        function sayYes() {
+            document.getElementById('success-screen').style.display = 'flex';
+            createHearts();
+        }
+
+        // Tạo hiệu ứng trái tim bay phới
+        function createHearts() {
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.classList.add('floating-heart');
+                    heart.innerHTML = '❤️';
+                    heart.style.left = Math.random() * 100 + 'vw';
+                    heart.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(heart);
+
+                    setTimeout(() => { heart.remove(); }, 3000);
+                }, i * 150);
+            }
+        }
+    </script>
+</body>
+</html>
+```
+
+### Các bước lưu file bằng Notepad:
+1. Mở ứng dụng **Notepad** lên.
+2. Sao chép (Copy) toàn bộ mã ở trên và dán (Paste) vào Notepad.
+3. Bấm **File** $\rightarrow$ **Save As...**
+4. Ở phần **File name**, nhập đúng tên: `index.html`
+5. Ở mục **Save as type**, chọn **All Files (*.*)**.
+6. Nhấn **Save** rồi upload file `index.html` này lên GitHub là hoàn tất!

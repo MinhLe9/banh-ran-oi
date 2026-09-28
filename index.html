@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gửi Bánh Cam ♡</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background: linear-gradient(135deg, #ffe6eb 0%, #ffc2d1 100%);
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Hiệu ứng bóng khí / trái tim trôi background */
+    .bg-hearts {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bg-heart {
+      position: absolute;
+      color: rgba(255, 182, 193, 0.6);
+      font-size: 20px;
+      animation: floatUp 8s infinite linear;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+      50% { opacity: 0.8; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+
+    /* Vùng game bắn cung */
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Bia bắn trái tim */
+    #target {
+      position: absolute;
+      right: 15vw;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 80px;
+      cursor: pointer;
+      animation: pulseTarget 1.5s infinite alternate ease-in-out;
+      filter: drop-shadow(0 10px 15px rgba(255, 77, 109, 0.4));
+      z-index: 5;
+    }
+    @keyframes pulseTarget {
+      0% { transform: translateY(-50%) scale(1); }
+      100% { transform: translateY(-50%) scale(1.15); }
+    }
+
+    /* Cung & Mũi tên */
+    #bow-area {
+      position: absolute;
+      left: 15vw;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #bow {
+      font-size: 90px;
+      transform: rotate(-45deg);
+    }
+    #arrow {
+      position: absolute;
+      font-size: 45px;
+      left: 30px;
+      transition: transform 0.05s linear;
+      cursor: grab;
+    }
+
+    /* Hướng dẫn nhẹ nhàng */
+    #guide-text {
+      position: absolute;
+      bottom: 40px;
+      color: #ff4d6d;
+      font-size: 18px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      z-index: 5;
+    }
+
+    /* Lá thư bí mật (Ẩn hoàn toàn ban đầu) */
+    #letter-wrapper {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.3);
+      opacity: 0;
+      z-index: 100;
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #letter-wrapper.show {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .card {
+      background: #ffffff;
+      width: 340px;
+      padding: 35px 25px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(255, 77, 109, 0.3);
+      border: 3px solid #ffccd5;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card h2 {
+      color: #ff4d6d;
+      font-size: 22px;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      position: relative;
+      min-height: 50px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .btn-yes {
+      background-color: #ff4d6d;
+      color: white;
+      box-shadow: 0 5px 15px rgba(255, 77, 109, 0.4);
+    }
+    .btn-yes:hover {
+      transform: scale(1.1);
+      background-color: #ff2a55;
+    }
+
+    .btn-no {
+      background-color: #f8f9fa;
+      color: #6c757d;
+      border: 1px solid #dee2e6;
+      position: absolute;
+      right: 30px;
+    }
+
+    /* Màn hình kết quả khi bấm Có */
+    #success-screen {
+      display: none;
+      text-align: center;
+    }
+    #success-screen h1 {
+      color: #ff4d6d;
+      font-size: 26px;
+      margin-bottom: 15px;
+    }
+    #success-screen p {
+      color: #555;
+      font-size: 18px;
+    }
+
+    /* Hiệu ứng nổ tim */
+    .heart-pop {
+      position: fixed;
+      pointer-events: none;
+      animation: pop 1s forwards ease-out;
+      z-index: 1000;
+    }
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--vx)), calc(-50% + var(--vy))) scale(1.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background hoa tiết -->
+  <div class="bg-hearts" id="bgHearts"></div>
+
+  <!-- Game Bắn Cung -->
+  <div id="game-container">
+    <div id="bow-area">
+      <div id="bow">🏹</div>
+      <div id="arrow">💘</div>
+    </div>
+    <div id="target">🎯</div>
+    <div id="guide-text">Bấm hoặc kéo mũi tên bắn vào mục tiêu nhé!</div>
+  </div>
+
+  <!-- Bức thư bí mật -->
+  <div id="letter-wrapper">
+    <div class="card">
+      <div id="question-screen">
+        <h2>Bánh rán nhớ bánh cam không ♡ ?</h2>
+        <div class="btn-group">
+          <button class="btn btn-yes" id="btnYes">Có ❤️</button>
+          <button class="btn btn-no" id="btnNo">Không 😜</button>
+        </div>
+      </div>
+
+      <div id="success-screen">
+        <h1>Biết ngay mà! 🥰</h1>
+        <p>Bánh rán cũng nhớ Bánh cam lắm luôn ♡✨</p>
+        <div style="font-size: 60px; margin-top: 15px;">🍩🍊</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tạo hiệu ứng tim trôi background
+    const bgHearts = document.getElementById('bgHearts');
+    for (let i = 0; i < 20; i++) {
+      const heart = document.createElement('div');
+      heart.className = 'bg-heart';
+      heart.innerHTML = '💖';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.animationDuration = (Math.random() * 4 + 4) + 's';
+      heart.style.animationDelay = Math.random() * 5 + 's';
+      bgHearts.appendChild(heart);
+    }
+
+    const arrow = document.getElementById('arrow');
+    const target = document.getElementById('target');
+    const gameContainer = document.getElementById('game-container');
+    const letterWrapper = document.getElementById('letter-wrapper');
+    const btnNo = document.getElementById('btnNo');
+    const btnYes = document.getElementById('btnYes');
+    const questionScreen = document.getElementById('question-screen');
+    const successScreen = document.getElementById('success-screen');
+
+    let isFlying = false;
+
+    // Bắn mũi tên
+    function shootArrow() {
+      if (isFlying) return;
+      isFlying = true;
+
+      const targetRect = target.getBoundingClientRect();
+      const arrowRect = arrow.getBoundingClientRect();
+
+      const deltaX = targetRect.left - arrowRect.left + 20;
+      const deltaY = targetRect.top - arrowRect.top + 20;
+
+      arrow.style.transition = 'transform 0.5s ease-in';
+      arrow.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.2)`;
+
+      setTimeout(() => {
+        // Tạo hiệu ứng nổ tim tại vị trí bắn trúng
+        createHeartBurst(targetRect.left + 40, targetRect.top + 40);
+
+        // Ẩn màn chơi, mở thư
+        gameContainer.style.opacity = '0';
+        gameContainer.style.transition = 'opacity 0.5s';
+        
+        setTimeout(() => {
+          gameContainer.style.display = 'none';
+          letterWrapper.classList.add('show');
+        }, 500);
+
+      }, 500);
+    }
+
+    // Sự kiện click/chạm để bắn
+    gameContainer.addEventListener('click', shootArrow);
+
+    // Nút "Không" tự động nhảy sang chỗ khác
+    function moveBtnNo() {
+      const x = Math.random() * 160 - 80;
+      const y = Math.random() * 160 - 80;
+      btnNo.style.transform = `translate(${x}px, ${y}px)`;
+    }
+    btnNo.addEventListener('mouseover', moveBtnNo);
+    btnNo.addEventListener('click', moveBtnNo);
+
+    // Nút "Có"
+    btnYes.addEventListener('click', (e) => {
+      createHeartBurst(e.clientX, e.clientY);
+      questionScreen.style.display = 'none';
+      successScreen.style.display = 'block';
+    });
+
+    // Hàm tạo pháo hoa trái tim
+    function createHeartBurst(x, y) {
+      for (let i = 0; i < 25; i++) {
+        const p = document.createElement('div');
+        p.className = 'heart-pop';
+        p.innerHTML = ['💖', '💕', '💗', '❤️', '🌸'][Math.floor(Math.random() * 5)];
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.fontSize = (Math.random() * 20 + 20) + 'px';
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 150 + 50;
+        p.style.setProperty('--vx', Math.cos(angle) * dist + 'px');
+        p.style.setProperty('--vy', Math.sin(angle) * dist + 'px');
+
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,341 +1,132 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gửi Bánh Cam ♡</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
-    body {
-      background: linear-gradient(135deg, #ffe6eb 0%, #ffc2d1 100%);
-      height: 100vh;
-      overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-    }
-
-    /* Hiệu ứng bóng khí / trái tim trôi background */
-    .bg-hearts {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .bg-heart {
-      position: absolute;
-      color: rgba(255, 182, 193, 0.6);
-      font-size: 20px;
-      animation: floatUp 8s infinite linear;
-    }
-    @keyframes floatUp {
-      0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
-      50% { opacity: 0.8; }
-      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
-    }
-
-    /* Vùng game bắn cung */
-    #game-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      z-index: 10;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    /* Bia bắn trái tim */
-    #target {
-      position: absolute;
-      right: 15vw;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 80px;
-      cursor: pointer;
-      animation: pulseTarget 1.5s infinite alternate ease-in-out;
-      filter: drop-shadow(0 10px 15px rgba(255, 77, 109, 0.4));
-      z-index: 5;
-    }
-    @keyframes pulseTarget {
-      0% { transform: translateY(-50%) scale(1); }
-      100% { transform: translateY(-50%) scale(1.15); }
-    }
-
-    /* Cung & Mũi tên */
-    #bow-area {
-      position: absolute;
-      left: 15vw;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 100px;
-      height: 150px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #bow {
-      font-size: 90px;
-      transform: rotate(-45deg);
-    }
-    #arrow {
-      position: absolute;
-      font-size: 45px;
-      left: 30px;
-      transition: transform 0.05s linear;
-      cursor: grab;
-    }
-
-    /* Hướng dẫn nhẹ nhàng */
-    #guide-text {
-      position: absolute;
-      bottom: 40px;
-      color: #ff4d6d;
-      font-size: 18px;
-      font-weight: 600;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px 20px;
-      border-radius: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      z-index: 5;
-    }
-
-    /* Lá thư bí mật (Ẩn hoàn toàn ban đầu) */
-    #letter-wrapper {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.3);
-      opacity: 0;
-      z-index: 100;
-      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    #letter-wrapper.show {
-      display: block;
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .card {
-      background: #ffffff;
-      width: 340px;
-      padding: 35px 25px;
-      border-radius: 24px;
-      text-align: center;
-      box-shadow: 0 20px 50px rgba(255, 77, 109, 0.3);
-      border: 3px solid #ffccd5;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card h2 {
-      color: #ff4d6d;
-      font-size: 22px;
-      margin-bottom: 25px;
-      line-height: 1.5;
-    }
-
-    .btn-group {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      position: relative;
-      min-height: 50px;
-    }
-
-    .btn {
-      padding: 12px 30px;
-      font-size: 16px;
-      font-weight: bold;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: transform 0.2s, background-color 0.2s;
-    }
-
-    .btn-yes {
-      background-color: #ff4d6d;
-      color: white;
-      box-shadow: 0 5px 15px rgba(255, 77, 109, 0.4);
-    }
-    .btn-yes:hover {
-      transform: scale(1.1);
-      background-color: #ff2a55;
-    }
-
-    .btn-no {
-      background-color: #f8f9fa;
-      color: #6c757d;
-      border: 1px solid #dee2e6;
-      position: absolute;
-      right: 30px;
-    }
-
-    /* Màn hình kết quả khi bấm Có */
-    #success-screen {
-      display: none;
-      text-align: center;
-    }
-    #success-screen h1 {
-      color: #ff4d6d;
-      font-size: 26px;
-      margin-bottom: 15px;
-    }
-    #success-screen p {
-      color: #555;
-      font-size: 18px;
-    }
-
-    /* Hiệu ứng nổ tim */
-    .heart-pop {
-      position: fixed;
-      pointer-events: none;
-      animation: pop 1s forwards ease-out;
-      z-index: 1000;
-    }
-    @keyframes pop {
-      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-      100% { transform: translate(calc(-50% + var(--vx)), calc(-50% + var(--vy))) scale(1.5); opacity: 0; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chạm để trồng hoa 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#1a0f14;overflow:hidden}
+body{font-family:'Quicksand','Segoe UI',sans-serif;background:radial-gradient(ellipse at 50% 100%,#3a1a28 0,#1a0f14 65%)}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.hint{position:fixed;top:18px;left:0;right:0;text-align:center;color:#ffc2d9;letter-spacing:3px;font-size:14px;font-weight:700;opacity:.75;pointer-events:none;transition:opacity 1s;text-shadow:0 0 10px #ff5c8a}
+.hint.off{opacity:0}
+.gift{position:fixed;top:48px;left:0;right:0;text-align:center;font:700 clamp(34px,9vw,58px)/1.1 'Dancing Script','Comic Sans MS',cursive;color:#ffb3cf;text-shadow:0 0 12px #ff5c8a,0 0 28px #ff5c8a88;pointer-events:none;animation:glow 2.6s ease-in-out infinite alternate}
+@keyframes glow{to{text-shadow:0 0 18px #ff8fb1,0 0 42px #ff5c8acc;transform:scale(1.04)}}
+.clear{position:fixed;right:14px;bottom:14px;border:1px solid #ff8fb1;background:#0000;color:#ffc2d9;border-radius:999px;padding:8px 16px;font:700 13px 'Quicksand',sans-serif;cursor:pointer}
+.clear:hover{background:#ff5c8a33}
+</style>
 </head>
 <body>
+<canvas id="c"></canvas>
+<div class="hint" id="hint">✿ Chạm vào bất kỳ đâu để trồng một bông hoa ✿</div>
+<div class="gift">Tặng Bánh Rán 💗</div>
+<button class="clear" id="clear">Xóa hết 🧹</button>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, D = Math.min(devicePixelRatio || 1, 2);
+function resize() { W = innerWidth; H = innerHeight; cv.width = W * D; cv.height = H * D; ctx.setTransform(D,0,0,D,0,0); }
+addEventListener('resize', resize); resize();
 
-  <!-- Background hoa tiết -->
-  <div class="bg-hearts" id="bgHearts"></div>
+const R = (a, b) => a + Math.random() * (b - a);
+const stars = Array.from({length: 90}, () => ({x: Math.random(), y: Math.random(), r: R(.4, 1.6), p: R(0, 6.28), s: R(.5, 1.6)}));
+const flowers = [];
+const TYPES = ['daisy', 'sunflower', 'rose', 'tulip', 'daisy', 'rose'];
 
-  <!-- Game Bắn Cung -->
-  <div id="game-container">
-    <div id="bow-area">
-      <div id="bow">🏹</div>
-      <div id="arrow">💘</div>
-    </div>
-    <div id="target">🎯</div>
-    <div id="guide-text">Bấm hoặc kéo mũi tên bắn vào mục tiêu nhé!</div>
-  </div>
+/* thêm hoa tại điểm chạm */
+cv.addEventListener('pointerdown', e => {
+  document.getElementById('hint').classList.add('off');
+  const x = e.clientX, y = Math.min(e.clientY, H - 120);
+  flowers.push({
+    type: TYPES[Math.floor(Math.random() * TYPES.length)],
+    x, y, bx: W / 2 + R(-28, 28), by: H - 36,
+    cx: (W / 2 + x) / 2 + R(-50, 50), cy: (H + y) / 2 + R(-20, 40),
+    size: R(26, 40), rot: R(-.4, .4), t0: performance.now(),
+    leaves: Array.from({length: 3}, (_, i) => ({s: .25 + i * .22 + R(0, .08), side: i % 2 ? 1 : -1, len: R(16, 26)}))
+  });
+});
+document.getElementById('clear').onclick = () => flowers.length = 0;
 
-  <!-- Bức thư bí mật -->
-  <div id="letter-wrapper">
-    <div class="card">
-      <div id="question-screen">
-        <h2>Bánh rán nhớ bánh cam không ♡ ?</h2>
-        <div class="btn-group">
-          <button class="btn btn-yes" id="btnYes">Có ❤️</button>
-          <button class="btn btn-no" id="btnNo">Không 😜</button>
-        </div>
-      </div>
+const pt = (f, t) => { const u = 1 - t; return [u*u*f.bx + 2*u*t*f.cx + t*t*f.x, u*u*f.by + 2*u*t*f.cy + t*t*f.y]; };
+const ease = t => 1 - Math.pow(1 - t, 3);
+const back = t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
 
-      <div id="success-screen">
-        <h1>Biết ngay mà! 🥰</h1>
-        <p>Bánh rán cũng nhớ Bánh cam lắm luôn ♡✨</p>
-        <div style="font-size: 60px; margin-top: 15px;">🍩🍊</div>
-      </div>
-    </div>
-  </div>
+function drawStem(f, g) {
+  ctx.save(); ctx.strokeStyle = '#5fa85a'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(f.bx, f.by);
+  for (let i = 1; i <= 40; i++) { const p = pt(f, g * i / 40); ctx.lineTo(p[0], p[1]); }
+  ctx.stroke();
+  f.leaves.forEach(l => {
+    if (g < l.s) return;
+    const k = Math.min(1, (g - l.s) * 5), p = pt(f, l.s), q = pt(f, l.s + .02);
+    const a = Math.atan2(q[1] - p[1], q[0] - p[0]) + l.side * 1.0;
+    ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(a); ctx.scale(k, k);
+    ctx.fillStyle = '#6dbb62'; ctx.beginPath();
+    ctx.ellipse(l.len / 2, 0, l.len / 2, 4.5, 0, 0, 6.28); ctx.fill(); ctx.restore();
+  });
+  ctx.restore();
+}
 
-  <script>
-    // Tạo hiệu ứng tim trôi background
-    const bgHearts = document.getElementById('bgHearts');
-    for (let i = 0; i < 20; i++) {
-      const heart = document.createElement('div');
-      heart.className = 'bg-heart';
-      heart.innerHTML = '💖';
-      heart.style.left = Math.random() * 100 + 'vw';
-      heart.style.animationDuration = (Math.random() * 4 + 4) + 's';
-      heart.style.animationDelay = Math.random() * 5 + 's';
-      bgHearts.appendChild(heart);
-    }
+function petals(n, len, wid, color, dist) {
+  for (let i = 0; i < n; i++) {
+    ctx.save(); ctx.rotate(i * 6.283 / n); ctx.fillStyle = color; ctx.beginPath();
+    ctx.ellipse(dist + len / 2, 0, len / 2, wid, 0, 0, 6.28); ctx.fill(); ctx.restore();
+  }
+}
+function disc(r, c1, c2) {
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r); g.addColorStop(0, c1); g.addColorStop(1, c2);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.28); ctx.fill();
+}
 
-    const arrow = document.getElementById('arrow');
-    const target = document.getElementById('target');
-    const gameContainer = document.getElementById('game-container');
-    const letterWrapper = document.getElementById('letter-wrapper');
-    const btnNo = document.getElementById('btnNo');
-    const btnYes = document.getElementById('btnYes');
-    const questionScreen = document.getElementById('question-screen');
-    const successScreen = document.getElementById('success-screen');
-
-    let isFlying = false;
-
-    // Bắn mũi tên
-    function shootArrow() {
-      if (isFlying) return;
-      isFlying = true;
-
-      const targetRect = target.getBoundingClientRect();
-      const arrowRect = arrow.getBoundingClientRect();
-
-      const deltaX = targetRect.left - arrowRect.left + 20;
-      const deltaY = targetRect.top - arrowRect.top + 20;
-
-      arrow.style.transition = 'transform 0.5s ease-in';
-      arrow.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.2)`;
-
-      setTimeout(() => {
-        // Tạo hiệu ứng nổ tim tại vị trí bắn trúng
-        createHeartBurst(targetRect.left + 40, targetRect.top + 40);
-
-        // Ẩn màn chơi, mở thư
-        gameContainer.style.opacity = '0';
-        gameContainer.style.transition = 'opacity 0.5s';
-        
-        setTimeout(() => {
-          gameContainer.style.display = 'none';
-          letterWrapper.classList.add('show');
-        }, 500);
-
-      }, 500);
-    }
-
-    // Sự kiện click/chạm để bắn
-    gameContainer.addEventListener('click', shootArrow);
-
-    // Nút "Không" tự động nhảy sang chỗ khác
-    function moveBtnNo() {
-      const x = Math.random() * 160 - 80;
-      const y = Math.random() * 160 - 80;
-      btnNo.style.transform = `translate(${x}px, ${y}px)`;
-    }
-    btnNo.addEventListener('mouseover', moveBtnNo);
-    btnNo.addEventListener('click', moveBtnNo);
-
-    // Nút "Có"
-    btnYes.addEventListener('click', (e) => {
-      createHeartBurst(e.clientX, e.clientY);
-      questionScreen.style.display = 'none';
-      successScreen.style.display = 'block';
+function drawHead(f, k) {
+  const s = f.size;
+  ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot); ctx.scale(k, k);
+  if (f.type === 'daisy') {
+    ctx.shadowColor = '#fff8'; ctx.shadowBlur = 16;
+    petals(14, s * .62, s * .13, '#fff', s * .22); ctx.shadowBlur = 0;
+    disc(s * .22, '#ffd93b', '#f0a500');
+  } else if (f.type === 'sunflower') {
+    ctx.shadowColor = '#ffc400aa'; ctx.shadowBlur = 18;
+    petals(18, s * .55, s * .11, '#ffc928', s * .3); ctx.rotate(.17);
+    petals(18, s * .5, s * .1, '#ffb300', s * .3); ctx.shadowBlur = 0;
+    disc(s * .34, '#7a4a1f', '#3b2210');
+  } else if (f.type === 'rose') {
+    ctx.shadowColor = '#ff2a4dcc'; ctx.shadowBlur = 26;
+    disc(s * .62, '#e0203f', '#8f0f2a'); ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#ff6b84'; ctx.lineWidth = 1.6;
+    for (let r = s * .12; r < s * .56; r += s * .1) { ctx.beginPath(); ctx.arc(r * .2, 0, r, .6 + r * .05, 5.3); ctx.stroke(); }
+  } else {
+    ctx.shadowColor = '#ff8fb1aa'; ctx.shadowBlur = 18;
+    const w = s * .5;
+    [[-.5, '#ff9fbd'], [.5, '#ff9fbd'], [0, '#ffb3cf']].forEach(([o, c]) => {
+      ctx.save(); ctx.rotate(o * .5); ctx.fillStyle = c; ctx.beginPath();
+      ctx.moveTo(0, w * .9); ctx.bezierCurveTo(-w * .75, w * .4, -w * .55, -w * .9, 0, -w * 1.15);
+      ctx.bezierCurveTo(w * .55, -w * .9, w * .75, w * .4, 0, w * .9); ctx.fill(); ctx.restore();
     });
+  }
+  ctx.restore();
+}
 
-    // Hàm tạo pháo hoa trái tim
-    function createHeartBurst(x, y) {
-      for (let i = 0; i < 25; i++) {
-        const p = document.createElement('div');
-        p.className = 'heart-pop';
-        p.innerHTML = ['💖', '💕', '💗', '❤️', '🌸'][Math.floor(Math.random() * 5)];
-        p.style.left = x + 'px';
-        p.style.top = y + 'px';
-        p.style.fontSize = (Math.random() * 20 + 20) + 'px';
-
-        const angle = Math.random() * Math.PI * 2;
-        const dist = Math.random() * 150 + 50;
-        p.style.setProperty('--vx', Math.cos(angle) * dist + 'px');
-        p.style.setProperty('--vy', Math.sin(angle) * dist + 'px');
-
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 1000);
-      }
+function frame(now) {
+  ctx.clearRect(0, 0, W, H);
+  stars.forEach(s => {
+    const a = .35 + .4 * Math.sin(now / 1000 * s.s + s.p);
+    ctx.fillStyle = `rgba(255,225,235,${a})`; ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, 6.28); ctx.fill();
+  });
+  flowers.forEach(f => {
+    const el = (now - f.t0) / 1000;
+    const g = ease(Math.min(1, el / 1.3));
+    drawStem(f, g);
+    if (el > 1.0) {
+      const k = back(Math.min(1, (el - 1.0) / .6)), sway = Math.sin(now / 900 + f.x) * .04;
+      f.rot += (sway - (f._s || 0)); f._s = sway;
+      drawHead(f, Math.max(k, 0));
     }
-  </script>
+  });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
